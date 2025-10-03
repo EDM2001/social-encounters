@@ -36,7 +36,7 @@
   "flags": {},
   "readme": "README.md",
   "license": "LICENSE",
-  "url": "",
-  "manifest": "https://example.com/social-encounters/module.json",
-  "download": ""
+  "url": "https://github.com/EDM2001/social-encounters",
+  "manifest": "https://raw.githubusercontent.com/EDM2001/social-encounters/main/module.json",
+  "download": "https://github.com/EDM2001/social-encounters/archive/refs/heads/main.zip"
 }
