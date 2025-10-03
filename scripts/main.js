@@ -297,21 +297,38 @@ class ImageViewer extends Application {
   }
 
   getData() {
+    const total = this.images.length;
     const current = this.images[this.index] ?? null;
-    const hasMultiple = this.images.length > 1;
+    const labelFor = (idx) => {
+      const label = game?.i18n?.format?.("SOCIALENCOUNTERS.ViewerThumbnailLabel", { index: idx + 1 });
+      return label ?? `Image ${idx + 1}`;
+    };
+    const thumbnails = this.images.map((path, idx) => ({
+      path,
+      index: idx,
+      label: labelFor(idx),
+      active: idx === this.index
+    }));
     return {
       background: this.background,
       current,
-      hasPrev: hasMultiple,
-      hasNext: hasMultiple,
+      thumbnails,
       index: this.index + 1,
-      total: this.images.length
+      total
     };
   }
 
   #advance(step) {
     if (!this.images.length) return;
-    this.index = (this.index + step + this.images.length) % this.images.length;
+    const nextIndex = (this.index + step + this.images.length) % this.images.length;
+    this.#showAt(nextIndex);
+  }
+
+  #showAt(index) {
+    if (!this.images.length) return;
+    const bounded = Math.min(Math.max(index, 0), this.images.length - 1);
+    if (bounded === this.index) return;
+    this.index = bounded;
     this.render(false);
   }
 
@@ -353,9 +370,16 @@ class ImageViewer extends Application {
     this.#attachKeyHandler();
 
     html.find('[data-action="close"]').on("click", () => this.close());
-    html.find('[data-action="prev"]').on("click", () => this.#advance(-1));
-    html.find('[data-action="next"]').on("click", () => this.#advance(1));
+    html.find('[data-action="select-image"]').on("click", (event) => {
+      const button = event.currentTarget;
+      const index = Number.parseInt(button?.dataset?.index ?? "", 10);
+      if (Number.isNaN(index)) return;
+      this.#showAt(index);
+    });
     html.find('.viewer-image').on("click", () => this.#advance(1));
+
+    const activeThumb = html.find('.viewer__thumb.is-active').get(0);
+    activeThumb?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'auto' });
   }
 }
 

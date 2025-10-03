@@ -6,8 +6,20 @@
     {{/if}}
   </div>
   <footer class="viewer__controls">
-    <button type="button" class="viewer__btn" data-action="prev" {{#unless hasPrev}}disabled{{/unless}}>{{localize "SOCIALENCOUNTERS.ViewerPrevious"}}</button>
     <span class="viewer__counter">{{index}} / {{total}}</span>
-    <button type="button" class="viewer__btn" data-action="next" {{#unless hasNext}}disabled{{/unless}}>{{localize "SOCIALENCOUNTERS.ViewerNext"}}</button>
+    <div class="viewer__thumbnails">
+      {{#each thumbnails as |thumb|}}
+        <button
+          type="button"
+          class="viewer__thumb {{#if thumb.active}}is-active{{/if}}"
+          data-action="select-image"
+          data-index="{{thumb.index}}"
+          aria-label="{{thumb.label}}"
+          title="{{thumb.label}}"
+        >
+          <img src="{{thumb.path}}" alt="{{thumb.label}}">
+        </button>
+      {{/each}}
+    </div>
   </footer>
 </div>

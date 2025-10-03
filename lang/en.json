@@ -16,5 +16,6 @@
   "SOCIALENCOUNTERS.ViewerPrevious": "Previous",
   "SOCIALENCOUNTERS.ViewerNext": "Next",
   "SOCIALENCOUNTERS.SelectAll": "Select All",
-  "SOCIALENCOUNTERS.ClearSelection": "Clear Selection"
+  "SOCIALENCOUNTERS.ClearSelection": "Clear Selection",
+  "SOCIALENCOUNTERS.ViewerThumbnailLabel": "Show image {index}"
 }
