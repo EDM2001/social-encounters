@@ -1,0 +1,51 @@
+<section class="browser">
+  <header class="browser__section">
+    <label class="browser__label">{{localize "SOCIALENCOUNTERS.FolderLabel"}}</label>
+    <div class="browser__field">
+      <input type="text" value="{{folder}}" placeholder="/" readonly>
+      <button type="button" class="browser__btn" data-action="choose-folder">{{localize "SOCIALENCOUNTERS.ChooseFolder"}}</button>
+    </div>
+  </header>
+
+  <section class="browser__section">
+    <label class="browser__label">{{localize "SOCIALENCOUNTERS.BackgroundLabel"}}</label>
+    <div class="browser__field">
+      <input type="text" value="{{background}}" placeholder="-" readonly>
+      <div class="browser__field-buttons">
+        <button type="button" class="browser__btn" data-action="choose-background">{{localize "SOCIALENCOUNTERS.ChooseBackground"}}</button>
+        {{#if background}}
+          <button type="button" class="browser__btn browser__btn--muted" data-action="clear-background">{{localize "SOCIALENCOUNTERS.ClearBackground"}}</button>
+        {{/if}}
+      </div>
+    </div>
+  </section>
+
+  <section class="browser__toolbar">
+    <span class="browser__selection">
+      {{localize "SOCIALENCOUNTERS.SelectImages"}}:
+      <strong><span class="selection-count">{{selectedCount}}</span></strong>
+    </span>
+    <div class="browser__field-buttons">
+      <button type="button" class="browser__btn" data-action="select-all">{{localize "SOCIALENCOUNTERS.SelectAll"}}</button>
+      <button type="button" class="browser__btn browser__btn--muted" data-action="clear-selection">{{localize "SOCIALENCOUNTERS.ClearSelection"}}</button>
+    </div>
+  </section>
+
+  <section class="image-list">
+    {{#if hasImages}}
+      {{#each images as |img|}}
+        <label class="image-card {{#if img.selected}}selected{{/if}}" data-image-path="{{img.path}}">
+          <input type="checkbox" data-action="toggle-image" value="{{img.path}}" {{#if img.selected}}checked{{/if}}>
+          <img class="image-card__preview" src="{{img.path}}" alt="{{img.name}}">
+          <span class="image-card__name">{{img.name}}</span>
+        </label>
+      {{/each}}
+    {{else}}
+      <p class="image-list__empty">{{localize "SOCIALENCOUNTERS.NoImages"}}</p>
+    {{/if}}
+  </section>
+
+  <footer class="browser__footer">
+    <button type="button" class="browser__btn browser__btn--primary" data-action="launch-viewer">{{localize "SOCIALENCOUNTERS.LaunchViewer"}}</button>
+  </footer>
+</section>

@@ -1,0 +1,20 @@
+{
+  "SOCIALENCOUNTERS.ControlTitle": "Social Encounters",
+  "SOCIALENCOUNTERS.OpenBrowser": "Open Image Browser",
+  "SOCIALENCOUNTERS.BrowserTitle": "Social Encounters Browser",
+  "SOCIALENCOUNTERS.FolderLabel": "Active Folder",
+  "SOCIALENCOUNTERS.BackgroundLabel": "Background Image",
+  "SOCIALENCOUNTERS.ChooseFolder": "Choose Folder",
+  "SOCIALENCOUNTERS.ChooseBackground": "Choose Background",
+  "SOCIALENCOUNTERS.ClearBackground": "Clear Background",
+  "SOCIALENCOUNTERS.InvalidBackground": "Please choose an image or video file to use as the background.",
+  "SOCIALENCOUNTERS.SelectImages": "Select the images to include",
+  "SOCIALENCOUNTERS.NoImages": "No images found in this folder.",
+  "SOCIALENCOUNTERS.LaunchViewer": "Launch Viewer",
+  "SOCIALENCOUNTERS.NotifyNoImages": "Select at least one image before starting the viewer.",
+  "SOCIALENCOUNTERS.ViewerClose": "Close",
+  "SOCIALENCOUNTERS.ViewerPrevious": "Previous",
+  "SOCIALENCOUNTERS.ViewerNext": "Next",
+  "SOCIALENCOUNTERS.SelectAll": "Select All",
+  "SOCIALENCOUNTERS.ClearSelection": "Clear Selection"
+}
