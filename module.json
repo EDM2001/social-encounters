@@ -2,7 +2,7 @@
   "id": "social-encounters",
   "title": "Social Encounters Viewer",
   "description": "Curate artwork from a folder and present it as a full-screen slideshow inside Foundry VTT.",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "type": "module",
   "authors": [
     {
