@@ -263,13 +263,29 @@ class ImageViewer extends Application {
   }
 
   static get defaultOptions() {
-    return foundry.utils.mergeObject(super.defaultOptions, {
+    const defaults = super.defaultOptions;
+    const { innerWidth, innerHeight } = window;
+    return foundry.utils.mergeObject(defaults, {
       id: `${MODULE_ID}-viewer`,
       classes: [MODULE_ID, "image-viewer"],
       template: `modules/${MODULE_ID}/templates/image-viewer.hbs`,
-      popOut: false,
-      resizable: false
+      popOut: true,
+      minimizable: false,
+      resizable: false,
+      draggable: false,
+      width: innerWidth ?? defaults.width ?? 800,
+      height: innerHeight ?? defaults.height ?? 600
     });
+  }
+
+  async _render(force, options) {
+    const result = await super._render(force, options);
+    if (this.element?.length) {
+      const width = window.innerWidth ?? this.element.width() ?? 800;
+      const height = window.innerHeight ?? this.element.height() ?? 600;
+      this.element.css({ left: 0, top: 0, width, height });
+    }
+    return result;
   }
 
   static show({ images, background }) {

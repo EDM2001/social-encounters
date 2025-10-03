@@ -153,6 +153,11 @@
   justify-content: center;
 }
 
+.social-encounters.image-viewer.app .window-header,
+.social-encounters.image-viewer.app .window-resizable-handle {
+  display: none;
+}
+
 .social-encounters.image-viewer.app .window-content {
   padding: 0;
   background: transparent;
