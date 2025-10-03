@@ -15,12 +15,12 @@ function isMediaFile(path) {
 class ImageFolderBrowser extends Application {
   constructor(options = {}) {
     super(options);
+    this.source = FilePicker.defaultOptions?.source ?? "data";
     this.folder = null;
     this.background = null;
     this.images = [];
     this.selected = new Set();
   }
-
   static get defaultOptions() {
     return foundry.utils.mergeObject(super.defaultOptions, {
       id: `${MODULE_ID}-browser`,
@@ -51,15 +51,69 @@ class ImageFolderBrowser extends Application {
     };
   }
 
+  #defaultSource() {
+    return FilePicker.defaultOptions?.source ?? "data";
+  }
+
+  #setSource(source) {
+    if (!source) return;
+    this.source = source;
+  }
+
+  #splitSource(path) {
+    if (!path) return { source: null, target: null };
+    const match = path.match(/^([^:]+):(.*)$/);
+    if (match && match[2] && !match[2].startsWith("//")) {
+      return { source: match[1], target: match[2] };
+    }
+    return { source: null, target: path };
+  }
+
+  #rememberSource(path, fallback) {
+    const { source } = this.#splitSource(path);
+    const resolved = source ?? fallback ?? this.source ?? this.#defaultSource();
+    this.#setSource(resolved);
+  }
+
+  #normalizePath(path) {
+    if (!path) return null;
+    const { source, target } = this.#splitSource(path);
+    const cleaned = (target ?? path ?? "").replace(/\+/g, "/");
+    return source ? `${source}:${cleaned}` : cleaned;
+  }
+
+  #normalizeFolder(path) {
+    const normalized = this.#normalizePath(path);
+    if (normalized == null) return null;
+    return normalized.replace(/\/+$/, "");
+  }
+
+  #prepareBrowse(path) {
+    const normalized = this.#normalizeFolder(path);
+    if (normalized == null) return null;
+    const { source, target } = this.#splitSource(normalized);
+    const browseSource = source ?? this.source ?? this.#defaultSource();
+    const base = target ?? normalized ?? "";
+    const browseTarget = base && !base.endsWith("/") ? `${base}/` : base;
+    this.#setSource(browseSource);
+    return {
+      normalized,
+      browseSource,
+      browseTarget
+    };
+  }
+
   async #promptFile({ type, current }) {
+    const normalizedCurrent = this.#normalizePath(current ?? "");
     return new Promise((resolve) => {
       let resolved = false;
       const picker = new FilePicker({
         type,
-        current: current ?? "",
+        current: normalizedCurrent ?? "",
         callback: (path) => {
           resolved = true;
-          resolve(path);
+          this.#rememberSource(path, picker.activeSource);
+          resolve(this.#normalizePath(path));
           picker.close();
         },
         onClose: () => {
@@ -69,37 +123,45 @@ class ImageFolderBrowser extends Application {
       picker.render(true);
     });
   }
-
   async #promptFolder() {
-    const path = await this.#promptFile({ type: FILE_TYPE, current: this.folder });
-    if (!path) return null;
-    if (!isMediaFile(path)) return this.#normalizeFolder(path);
-    const parts = path.split("/");
-    parts.pop();
-    return this.#normalizeFolder(parts.join("/"));
-  }
+    const selected = await this.#promptFile({ type: FILE_TYPE, current: this.folder });
+    if (!selected) return null;
 
+    const { source, target } = this.#splitSource(selected);
+    const candidate = target ?? selected;
+    if (!isMediaFile(candidate)) return this.#normalizeFolder(selected);
+
+    const segments = candidate.split("/");
+    segments.pop();
+    const folder = segments.join("/");
+    const folderPath = source ? `${source}:${folder}` : folder;
+    return this.#normalizeFolder(folderPath);
+  }
   async #promptBackground() {
-    const path = await this.#promptFile({ type: FILE_TYPE, current: this.background ?? this.folder });
-    if (!path) return null;
-    if (!isMediaFile(path)) {
+    const selected = await this.#promptFile({ type: FILE_TYPE, current: this.background ?? this.folder });
+    if (!selected) return null;
+
+    const { target } = this.#splitSource(selected);
+    const candidate = target ?? selected;
+    if (!isMediaFile(candidate)) {
       ui.notifications?.warn(game.i18n.localize("SOCIALENCOUNTERS.InvalidBackground"));
       return null;
     }
-    return path;
-  }
 
-  #normalizeFolder(path) {
-    if (!path) return null;
-    return path.replace(/\\+/g, "/").replace(/\/+$/, "");
+    return this.#normalizePath(selected);
   }
 
   async #loadFolder(path) {
     if (!path) return;
-    const folder = this.#normalizeFolder(path);
-    const target = folder.endsWith("/") ? folder : `${folder}/`;
+
+    const browse = this.#prepareBrowse(path);
+    if (!browse) return;
+
+    const { normalized, browseSource, browseTarget } = browse;
     try {
-      const result = await FilePicker.browse(FILE_TYPE, target);
+      const result = await FilePicker.browse(browseSource, browseTarget, {
+        extensions: IMAGE_EXTENSIONS
+      });
       const previous = new Set(this.selected);
       const images = result.files
         .filter((file) => isMediaFile(file))
@@ -109,7 +171,7 @@ class ImageFolderBrowser extends Application {
           selected: previous.has(file)
         }));
 
-      this.folder = folder;
+      this.folder = normalized;
       this.images = images;
       this.selected = new Set(images.filter((img) => img.selected).map((img) => img.path));
       await this.render(false);
@@ -118,7 +180,6 @@ class ImageFolderBrowser extends Application {
       ui.notifications?.error(error.message ?? "Failed to browse folder");
     }
   }
-
   #updateSelection(path, isSelected) {
     if (isSelected) this.selected.add(path);
     else this.selected.delete(path);
