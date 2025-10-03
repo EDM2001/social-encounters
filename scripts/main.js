@@ -291,7 +291,18 @@ Hooks.once("init", () => {
 });
 
 Hooks.on("getSceneControlButtons", (controls) => {
-  controls.push({
+  const target = Array.isArray(controls)
+    ? controls
+    : Array.isArray(controls?.controls)
+      ? controls.controls
+      : null;
+
+  if (!target) {
+    log("Unable to register scene control buttons; unexpected data", controls);
+    return;
+  }
+
+  target.push({
     name: MODULE_ID,
     title: game.i18n.localize("SOCIALENCOUNTERS.ControlTitle"),
     icon: "fas fa-images",
