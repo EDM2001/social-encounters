@@ -1,4 +1,4 @@
-<div class="viewer" {{#if background}}style="background-image: url('{{background}}');"{{/if}}>
+<div class="viewer{{#if background}} viewer--has-background{{/if}}" {{#if background}}style="background-image: url('{{background}}');"{{/if}}>
   <button type="button" class="viewer__close" data-action="close" aria-label="{{localize 'SOCIALENCOUNTERS.ViewerClose'}}">&times;</button>
   <div class="viewer__stage">
     {{#if current}}

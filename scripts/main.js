@@ -1,5 +1,10 @@
 const MODULE_ID = "social-encounters";
 const FILE_TYPE = "imagevideo";
+const SOCKET_CHANNEL = `module.${MODULE_ID}`;
+const SETTING_KEYS = {
+  IMAGE_FOLDER: "imageFolder"
+};
+
 const SOCKET_EVENTS = {
   SHOW: "show",
   CLOSE: "close"
@@ -20,10 +25,11 @@ class ImageFolderBrowser extends Application {
   constructor(options = {}) {
     super(options);
     this.source = FilePicker.defaultOptions?.source ?? "data";
-    this.folder = null;
+    this.folder = game.settings.get(MODULE_ID, SETTING_KEYS.IMAGE_FOLDER) || null;
     this.background = null;
     this.images = [];
     this.selected = new Set();
+    this._initialLoadComplete = false;
   }
   static get defaultOptions() {
     return foundry.utils.mergeObject(super.defaultOptions, {
@@ -42,6 +48,7 @@ class ImageFolderBrowser extends Application {
   static show() {
     if (!this._instance) this._instance = new this();
     this._instance.render(true);
+    void this._instance.#ensureInitialLoad();
     return this._instance;
   }
 
@@ -53,6 +60,17 @@ class ImageFolderBrowser extends Application {
       hasImages: this.images.length > 0,
       selectedCount: this.selected.size
     };
+  }
+
+  async #ensureInitialLoad() {
+    if (this._initialLoadComplete) return;
+    this._initialLoadComplete = true;
+    if (!this.folder) return;
+    try {
+      await this.#loadFolder(this.folder, { updateSetting: false, quiet: true });
+    } catch (error) {
+      console.error(`${MODULE_ID} | Failed to load initial folder`, error);
+    }
   }
 
   #defaultSource() {
@@ -155,7 +173,7 @@ class ImageFolderBrowser extends Application {
     return this.#normalizePath(selected);
   }
 
-  async #loadFolder(path) {
+  async #loadFolder(path, { updateSetting = false, quiet = false } = {}) {
     if (!path) return;
 
     const browse = this.#prepareBrowse(path);
@@ -179,9 +197,13 @@ class ImageFolderBrowser extends Application {
       this.images = images;
       this.selected = new Set(images.filter((img) => img.selected).map((img) => img.path));
       await this.render(false);
+
+      if (updateSetting && game.user?.isGM) {
+        await game.settings.set(MODULE_ID, SETTING_KEYS.IMAGE_FOLDER, normalized);
+      }
     } catch (error) {
       console.error(`${MODULE_ID} | Failed to browse folder`, error);
-      ui.notifications?.error(error.message ?? "Failed to browse folder");
+      if (!quiet) ui.notifications?.error(error.message ?? "Failed to browse folder");
     }
   }
   #updateSelection(path, isSelected) {
@@ -226,7 +248,8 @@ class ImageFolderBrowser extends Application {
 
     html.find('[data-action="choose-folder"]').on("click", async () => {
       const folder = await this.#promptFolder();
-      await this.#loadFolder(folder);
+      if (!folder) return;
+      await this.#loadFolder(folder, { updateSetting: true });
     });
 
     html.find('[data-action="choose-background"]').on("click", async () => {
@@ -285,14 +308,35 @@ class ImageViewer extends Application {
   async _render(force, options) {
     const result = await super._render(force, options);
     if (this.element?.length) {
-      const width = window.innerWidth ?? this.element.width() ?? 800;
-      const height = window.innerHeight ?? this.element.height() ?? 600;
-      this.element.css({ left: 0, top: 0, width, height });
+      const isGM = game.user?.isGM ?? false;
+      this.element.toggleClass('viewer-fullscreen', !isGM);
+
+      if (!isGM) {
+        const width = window.innerWidth ?? this.element.width() ?? 800;
+        const height = window.innerHeight ?? this.element.height() ?? 600;
+        this.element.css({ left: 0, top: 0, width, height });
+      } else {
+        const viewportWidth = window.innerWidth ?? 1600;
+        const viewportHeight = window.innerHeight ?? 900;
+        const marginLeft = 320;
+        const marginTop = 60;
+        const gutter = 24;
+        const availableWidth = Math.max(viewportWidth - marginLeft - gutter, 320);
+        const width = Math.min(availableWidth, viewportWidth - gutter, 1400);
+        const availableHeight = Math.max(viewportHeight - marginTop - gutter, 320);
+        const height = Math.min(availableHeight, viewportHeight - gutter, 820);
+        const left = Math.max(Math.min(viewportWidth - width - gutter, marginLeft), 0);
+        const maxTop = Math.max(viewportHeight - height - gutter, 0);
+        const top = Math.min(Math.max((viewportHeight - height) / 2, marginTop), maxTop);
+        this.setPosition({ left, top, width, height });
+        this.bringToTop();
+      }
     }
     return result;
   }
 
   static show({ images, background, broadcast = true } = {}) {
+    this.registerSocket();
     const prepared = Array.isArray(images) ? Array.from(images) : [];
     if (!prepared.length) return null;
     if (this._instance) this.closeActive({ animate: false, broadcast: false });
@@ -315,7 +359,7 @@ class ImageViewer extends Application {
     if (!game?.socket || !game.user?.isGM) return;
     if (!Array.isArray(images) || !images.length) return;
 
-    game.socket.emit(MODULE_ID, {
+    game.socket.emit(SOCKET_CHANNEL, {
       type: SOCKET_EVENTS.SHOW,
       userId: game.user.id,
       images,
@@ -325,7 +369,7 @@ class ImageViewer extends Application {
 
   static broadcastClose() {
     if (!game?.socket || !game.user?.isGM) return;
-    game.socket.emit(MODULE_ID, {
+    game.socket.emit(SOCKET_CHANNEL, {
       type: SOCKET_EVENTS.CLOSE,
       userId: game.user.id
     });
@@ -334,7 +378,7 @@ class ImageViewer extends Application {
   static registerSocket() {
     if (this._socketRegistered || !game?.socket) return;
 
-    game.socket.on(MODULE_ID, (payload = {}) => {
+    game.socket.on(SOCKET_CHANNEL, (payload = {}) => {
       const { type, userId } = payload;
       if (!type) return;
       if (userId === game.user.id) return;
@@ -460,6 +504,16 @@ globalThis.SocialEncounters = {
 
 Hooks.once("init", () => {
   log("Initializing module");
+
+  game.settings.register(MODULE_ID, SETTING_KEYS.IMAGE_FOLDER, {
+    name: game.i18n.localize("SOCIALENCOUNTERS.Settings.ImageFolder.Name"),
+    hint: game.i18n.localize("SOCIALENCOUNTERS.Settings.ImageFolder.Hint"),
+    scope: "world",
+    config: true,
+    type: String,
+    default: "",
+    filePicker: "folder"
+  });
 });
 
 Hooks.once("ready", () => {

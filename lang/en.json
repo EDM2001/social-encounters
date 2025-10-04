@@ -17,5 +17,7 @@
   "SOCIALENCOUNTERS.ViewerNext": "Next",
   "SOCIALENCOUNTERS.SelectAll": "Select All",
   "SOCIALENCOUNTERS.ClearSelection": "Clear Selection",
-  "SOCIALENCOUNTERS.ViewerThumbnailLabel": "Show image {index}"
+  "SOCIALENCOUNTERS.ViewerThumbnailLabel": "Show image {index}",
+  "SOCIALENCOUNTERS.Settings.ImageFolder.Name": "Default Image Folder",
+  "SOCIALENCOUNTERS.Settings.ImageFolder.Hint": "Choose the folder that contains slideshow images."
 }
