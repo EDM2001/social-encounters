@@ -1,5 +1,9 @@
 const MODULE_ID = "social-encounters";
 const FILE_TYPE = "imagevideo";
+const SOCKET_EVENTS = {
+  SHOW: "show",
+  CLOSE: "close"
+};
 
 const IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg", ".avif", ".webm", ".mp4"];
 
@@ -288,12 +292,69 @@ class ImageViewer extends Application {
     return result;
   }
 
-  static show({ images, background }) {
-    if (!images?.length) return null;
-    if (this._instance) this._instance.close({ animate: false });
-    this._instance = new this({ images, background });
+  static show({ images, background, broadcast = true } = {}) {
+    const prepared = Array.isArray(images) ? Array.from(images) : [];
+    if (!prepared.length) return null;
+    if (this._instance) this.closeActive({ animate: false, broadcast: false });
+    this._instance = new this({ images: prepared, background });
     this._instance.render(true);
+
+    if (broadcast && game.user?.isGM) {
+      this.broadcastShow({ images: prepared, background });
+    }
+
     return this._instance;
+  }
+
+  static closeActive({ animate = false, broadcast = true } = {}) {
+    if (!this._instance) return null;
+    return this._instance.close({ animate, broadcast });
+  }
+
+  static broadcastShow({ images, background }) {
+    if (!game?.socket || !game.user?.isGM) return;
+    if (!Array.isArray(images) || !images.length) return;
+
+    game.socket.emit(MODULE_ID, {
+      type: SOCKET_EVENTS.SHOW,
+      userId: game.user.id,
+      images,
+      background
+    });
+  }
+
+  static broadcastClose() {
+    if (!game?.socket || !game.user?.isGM) return;
+    game.socket.emit(MODULE_ID, {
+      type: SOCKET_EVENTS.CLOSE,
+      userId: game.user.id
+    });
+  }
+
+  static registerSocket() {
+    if (this._socketRegistered || !game?.socket) return;
+
+    game.socket.on(MODULE_ID, (payload = {}) => {
+      const { type, userId } = payload;
+      if (!type) return;
+      if (userId === game.user.id) return;
+
+      switch (type) {
+        case SOCKET_EVENTS.SHOW: {
+          const { images, background } = payload;
+          if (!Array.isArray(images) || !images.length) return;
+          this.show({ images, background, broadcast: false });
+          break;
+        }
+        case SOCKET_EVENTS.CLOSE:
+          this.closeActive({ animate: false, broadcast: false });
+          break;
+        default:
+          break;
+      }
+    });
+
+    this._socketRegistered = true;
   }
 
   getData() {
@@ -357,12 +418,19 @@ class ImageViewer extends Application {
     document.addEventListener("keydown", this._keyHandler);
   }
 
-  async close(options) {
+  async close(options = {}) {
     if (this._keyHandler) {
       document.removeEventListener("keydown", this._keyHandler);
       this._keyHandler = null;
     }
-    return super.close(options);
+
+    const { broadcast = true, ...rest } = options;
+    const shouldBroadcast = broadcast && typeof this.constructor.broadcastClose === "function" && game.user?.isGM;
+    if (shouldBroadcast) this.constructor.broadcastClose();
+
+    const result = await super.close(rest);
+    this.constructor._instance = null;
+    return result;
   }
 
   activateListeners(html) {
@@ -383,12 +451,19 @@ class ImageViewer extends Application {
   }
 }
 
+ImageViewer._instance = null;
+ImageViewer._socketRegistered = false;
+
 globalThis.SocialEncounters = {
   openBrowser: () => ImageFolderBrowser.show()
 };
 
 Hooks.once("init", () => {
   log("Initializing module");
+});
+
+Hooks.once("ready", () => {
+  ImageViewer.registerSocket();
 });
 
 Hooks.on("getSceneControlButtons", (controls) => {
