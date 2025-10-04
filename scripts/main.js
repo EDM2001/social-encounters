@@ -7,6 +7,7 @@ const SETTING_KEYS = {
 
 const SOCKET_EVENTS = {
   SHOW: "show",
+  UPDATE: "update",
   CLOSE: "close"
 };
 
@@ -257,11 +258,13 @@ class ImageFolderBrowser extends Application {
       if (!bg) return;
       this.background = bg;
       await this.render(false);
+      if (game.user?.isGM) ImageViewer.syncWithPlayers();
     });
 
     html.find('[data-action="clear-background"]').on("click", async () => {
       this.background = null;
       await this.render(false);
+      if (game.user?.isGM) ImageViewer.syncWithPlayers();
     });
 
     html.find('[data-action="select-all"]').on("click", () => this.#selectAll());
@@ -296,7 +299,7 @@ class ImageViewer extends Application {
       id: `${MODULE_ID}-viewer`,
       classes: [MODULE_ID, "image-viewer"],
       template: `modules/${MODULE_ID}/templates/image-viewer.hbs`,
-      popOut: true,
+      popOut: false,
       minimizable: false,
       resizable: false,
       draggable: false,
@@ -320,12 +323,14 @@ class ImageViewer extends Application {
         const viewportHeight = window.innerHeight ?? 900;
         const marginLeft = 320;
         const marginTop = 60;
+        const sidebarWidth = 360;
         const gutter = 24;
-        const availableWidth = Math.max(viewportWidth - marginLeft - gutter, 320);
-        const width = Math.min(availableWidth, viewportWidth - gutter, 1400);
+        const maxWidth = Math.max(viewportWidth - sidebarWidth - gutter, 320);
+        const width = Math.min(maxWidth, 1400);
+        const maxLeft = Math.max(viewportWidth - sidebarWidth - width, 0);
+        const left = Math.min(marginLeft, maxLeft);
         const availableHeight = Math.max(viewportHeight - marginTop - gutter, 320);
-        const height = Math.min(availableHeight, viewportHeight - gutter, 820);
-        const left = Math.max(Math.min(viewportWidth - width - gutter, marginLeft), 0);
+        const height = Math.min(availableHeight, 820);
         const maxTop = Math.max(viewportHeight - height - gutter, 0);
         const top = Math.min(Math.max((viewportHeight - height) / 2, marginTop), maxTop);
         this.setPosition({ left, top, width, height });
@@ -335,19 +340,21 @@ class ImageViewer extends Application {
     return result;
   }
 
-  static show({ images, background, broadcast = true } = {}) {
+  static show({ images, background, startIndex = 0, broadcast = true } = {}) {
     this.registerSocket();
     const prepared = Array.isArray(images) ? Array.from(images) : [];
     if (!prepared.length) return null;
     if (this._instance) this.closeActive({ animate: false, broadcast: false });
-    this._instance = new this({ images: prepared, background });
-    this._instance.render(true);
+    const instance = new this({ images: prepared, background });
+    instance.index = Math.min(Math.max(startIndex, 0), prepared.length - 1);
+    this._instance = instance;
+    instance.render(true);
 
     if (broadcast && game.user?.isGM) {
-      this.broadcastShow({ images: prepared, background });
+      this.broadcastShow({ images: prepared, background, index: instance.index });
     }
 
-    return this._instance;
+    return instance;
   }
 
   static closeActive({ animate = false, broadcast = true } = {}) {
@@ -355,7 +362,7 @@ class ImageViewer extends Application {
     return this._instance.close({ animate, broadcast });
   }
 
-  static broadcastShow({ images, background }) {
+  static broadcastShow({ images, background, index = 0 }) {
     if (!game?.socket || !game.user?.isGM) return;
     if (!Array.isArray(images) || !images.length) return;
 
@@ -363,8 +370,21 @@ class ImageViewer extends Application {
       type: SOCKET_EVENTS.SHOW,
       userId: game.user.id,
       images,
-      background
+      background,
+      index
     });
+  }
+
+  static broadcastUpdate({ index, background, images } = {}) {
+    if (!game?.socket || !game.user?.isGM) return;
+    const payload = {
+      type: SOCKET_EVENTS.UPDATE,
+      userId: game.user.id
+    };
+    if (typeof index === 'number' && Number.isFinite(index)) payload.index = index;
+    if (typeof background !== 'undefined') payload.background = background;
+    if (Array.isArray(images) && images.length) payload.images = images;
+    game.socket.emit(SOCKET_CHANNEL, payload);
   }
 
   static broadcastClose() {
@@ -373,6 +393,17 @@ class ImageViewer extends Application {
       type: SOCKET_EVENTS.CLOSE,
       userId: game.user.id
     });
+  }
+
+  static syncWithPlayers({ includeImages = false } = {}) {
+    if (!game.user?.isGM) return;
+    if (!this._instance) return;
+    const payload = {
+      index: this._instance.index,
+      background: this._instance.background
+    };
+    if (includeImages) payload.images = Array.isArray(this._instance.images) ? Array.from(this._instance.images) : [];
+    this.broadcastUpdate(payload);
   }
 
   static registerSocket() {
@@ -385,9 +416,24 @@ class ImageViewer extends Application {
 
       switch (type) {
         case SOCKET_EVENTS.SHOW: {
-          const { images, background } = payload;
+          const { images, background, index = 0 } = payload;
           if (!Array.isArray(images) || !images.length) return;
-          this.show({ images, background, broadcast: false });
+          this.show({ images, background, startIndex: index, broadcast: false });
+          break;
+        }
+        case SOCKET_EVENTS.UPDATE: {
+          const { images, background, index } = payload;
+          if (Array.isArray(images) && images.length) {
+            this.show({ images, background, startIndex: index ?? 0, broadcast: false });
+            break;
+          }
+          const instance = this._instance;
+          if (!instance) return;
+          if (typeof background !== 'undefined') instance.background = background;
+          if (typeof index === 'number' && Number.isFinite(index)) {
+            instance.index = Math.min(Math.max(index, 0), Math.max(instance.images.length - 1, 0));
+          }
+          instance.render(false);
           break;
         }
         case SOCKET_EVENTS.CLOSE:
@@ -435,6 +481,8 @@ class ImageViewer extends Application {
     if (bounded === this.index) return;
     this.index = bounded;
     this.render(false);
+
+    if (game.user?.isGM) this.constructor.syncWithPlayers();
   }
 
   #attachKeyHandler() {
