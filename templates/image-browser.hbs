@@ -1,11 +1,22 @@
 <section class="browser">
-  <header class="browser__section">
+  <section class="browser__section browser__section--info">
     <label class="browser__label">{{localize "SOCIALENCOUNTERS.FolderLabel"}}</label>
     <div class="browser__field">
       <input type="text" value="{{folder}}" placeholder="/" readonly>
-      <button type="button" class="browser__btn" data-action="choose-folder">{{localize "SOCIALENCOUNTERS.ChooseFolder"}}</button>
     </div>
-  </header>
+    <p class="browser__hint">{{localize "SOCIALENCOUNTERS.Settings.ImageFolder.Hint"}}</p>
+  </section>
+
+  <section class="browser__section">
+    <label class="browser__label">{{localize "SOCIALENCOUNTERS.TextLabel"}}</label>
+    <div class="browser__field">
+      <input type="text" value="{{text}}" placeholder="{{localize "SOCIALENCOUNTERS.TextPlaceholder"}}" readonly>
+      <div class="browser__field-buttons">
+        <button type="button" class="browser__btn" data-action="show-text">{{localize "SOCIALENCOUNTERS.TextShow"}}</button>
+        <button type="button" class="browser__btn browser__btn--muted" data-action="clear-text" {{#unless text}}disabled{{/unless}}>{{localize "SOCIALENCOUNTERS.TextClear"}}</button>
+      </div>
+    </div>
+  </section>
 
   <section class="browser__section">
     <label class="browser__label">{{localize "SOCIALENCOUNTERS.BackgroundLabel"}}</label>

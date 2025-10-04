@@ -5,6 +5,9 @@
       <img class="viewer-image" src="{{current}}" alt="">
     {{/if}}
   </div>
+  {{#if text}}
+    <div class="viewer__text">{{text}}</div>
+  {{/if}}
   <footer class="viewer__controls">
     <span class="viewer__counter">{{index}} / {{total}}</span>
     <div class="viewer__thumbnails">

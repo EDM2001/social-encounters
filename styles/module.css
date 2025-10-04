@@ -27,6 +27,12 @@
   align-items: center;
 }
 
+.social-encounters.image-browser .browser__hint {
+  margin-top: 0.25rem;
+  color: var(--color-text-light-secondary, #bbb);
+  font-size: 0.8rem;
+}
+
 .social-encounters.image-browser .browser__field input {
   flex: 1;
   padding: 0.35rem 0.5rem;
@@ -213,6 +219,20 @@
   border-radius: 8px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
   cursor: pointer;
+}
+
+.social-encounters.image-viewer .viewer__text {
+  position: relative;
+  z-index: 1;
+  max-width: min(80vw, 1100px);
+  margin-top: 1rem;
+  padding: 1rem 1.5rem;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 1rem;
+  color: #fff;
+  font-size: 1.1rem;
+  text-align: center;
+  white-space: pre-wrap;
 }
 
 .social-encounters.image-viewer .viewer__controls {

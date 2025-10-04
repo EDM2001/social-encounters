@@ -19,5 +19,12 @@
   "SOCIALENCOUNTERS.ClearSelection": "Clear Selection",
   "SOCIALENCOUNTERS.ViewerThumbnailLabel": "Show image {index}",
   "SOCIALENCOUNTERS.Settings.ImageFolder.Name": "Default Image Folder",
-  "SOCIALENCOUNTERS.Settings.ImageFolder.Hint": "Choose the folder that contains slideshow images."
+  "SOCIALENCOUNTERS.Settings.ImageFolder.Hint": "Choose the folder that contains slideshow images.",
+  "SOCIALENCOUNTERS.TextLabel": "Display Text",
+  "SOCIALENCOUNTERS.TextPlaceholder": "Add a message to show players",
+  "SOCIALENCOUNTERS.TextShow": "Set Text",
+  "SOCIALENCOUNTERS.TextClear": "Clear Text",
+  "SOCIALENCOUNTERS.TextPromptTitle": "Display Text",
+  "SOCIALENCOUNTERS.TextPromptLabel": "Enter the text to display to players:",
+  "SOCIALENCOUNTERS.TextConfirm": "Show Text"
 }

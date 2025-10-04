@@ -59,7 +59,8 @@ class ImageFolderBrowser extends Application {
       background: this.background,
       images: this.images,
       hasImages: this.images.length > 0,
-      selectedCount: this.selected.size
+      selectedCount: this.selected.size,
+      text: ImageViewer.getText?.() ?? ''
     };
   }
 
@@ -253,6 +254,29 @@ class ImageFolderBrowser extends Application {
       await this.#loadFolder(folder, { updateSetting: true });
     });
 
+    html.find('[data-action="show-text"]').on("click", async () => {
+      const current = ImageViewer.getText?.() ?? '';
+      const content = `<div class="form-group">
+  <label>${game.i18n.localize('SOCIALENCOUNTERS.TextPromptLabel')}</label>
+  <textarea name="sc-text" rows="4">${foundry.utils.escapeHTML(current)}</textarea>
+</div>`;
+      const value = await Dialog.prompt({
+        title: game.i18n.localize('SOCIALENCOUNTERS.TextPromptTitle'),
+        label: game.i18n.localize('SOCIALENCOUNTERS.TextConfirm'),
+        content,
+        callback: html => html.querySelector('textarea[name="sc-text"]')?.value ?? '',
+        rejectClose: false
+      });
+      if (value === null) return;
+      ImageViewer.setText(value);
+      await this.render(false);
+    });
+
+    html.find('[data-action="clear-text"]').on("click", async () => {
+      ImageViewer.setText('');
+      await this.render(false);
+    });
+
     html.find('[data-action="choose-background"]').on("click", async () => {
       const bg = await this.#promptBackground();
       if (!bg) return;
@@ -289,6 +313,7 @@ class ImageViewer extends Application {
     this.images = images;
     this.background = background;
     this.index = 0;
+    this.text = ImageViewer.getText();
     this._keyHandler = null;
   }
 
@@ -299,7 +324,7 @@ class ImageViewer extends Application {
       id: `${MODULE_ID}-viewer`,
       classes: [MODULE_ID, "image-viewer"],
       template: `modules/${MODULE_ID}/templates/image-viewer.hbs`,
-      popOut: false,
+      popOut: true,
       minimizable: false,
       resizable: false,
       draggable: false,
@@ -311,47 +336,31 @@ class ImageViewer extends Application {
   async _render(force, options) {
     const result = await super._render(force, options);
     if (this.element?.length) {
-      const isGM = game.user?.isGM ?? false;
-      this.element.toggleClass('viewer-fullscreen', !isGM);
-
-      if (!isGM) {
-        const width = window.innerWidth ?? this.element.width() ?? 800;
-        const height = window.innerHeight ?? this.element.height() ?? 600;
-        this.element.css({ left: 0, top: 0, width, height });
-      } else {
-        const viewportWidth = window.innerWidth ?? 1600;
-        const viewportHeight = window.innerHeight ?? 900;
-        const marginLeft = 320;
-        const marginTop = 60;
-        const sidebarWidth = 360;
-        const gutter = 24;
-        const maxWidth = Math.max(viewportWidth - sidebarWidth - gutter, 320);
-        const width = Math.min(maxWidth, 1400);
-        const maxLeft = Math.max(viewportWidth - sidebarWidth - width, 0);
-        const left = Math.min(marginLeft, maxLeft);
-        const availableHeight = Math.max(viewportHeight - marginTop - gutter, 320);
-        const height = Math.min(availableHeight, 820);
-        const maxTop = Math.max(viewportHeight - height - gutter, 0);
-        const top = Math.min(Math.max((viewportHeight - height) / 2, marginTop), maxTop);
-        this.setPosition({ left, top, width, height });
-        this.bringToTop();
-      }
+      const width = window.innerWidth ?? this.element.width() ?? 800;
+      const height = window.innerHeight ?? this.element.height() ?? 600;
+      this.element.addClass('viewer-fullscreen');
+      this.setPosition({ left: 0, top: 0, width, height });
+      this.element.css({ left: 0, top: 0, width, height });
+      this.bringToTop();
     }
     return result;
   }
 
-  static show({ images, background, startIndex = 0, broadcast = true } = {}) {
+  static show({ images, background, startIndex = 0, text = undefined, broadcast = true } = {}) {
     this.registerSocket();
     const prepared = Array.isArray(images) ? Array.from(images) : [];
     if (!prepared.length) return null;
+    if (typeof text === 'string') this._text = text;
+    if (typeof this._text !== 'string') this._text = '';
     if (this._instance) this.closeActive({ animate: false, broadcast: false });
     const instance = new this({ images: prepared, background });
     instance.index = Math.min(Math.max(startIndex, 0), prepared.length - 1);
+    instance.text = this.getText();
     this._instance = instance;
     instance.render(true);
 
     if (broadcast && game.user?.isGM) {
-      this.broadcastShow({ images: prepared, background, index: instance.index });
+      this.broadcastShow({ images: prepared, background, index: instance.index, text: this.getText() });
     }
 
     return instance;
@@ -362,7 +371,7 @@ class ImageViewer extends Application {
     return this._instance.close({ animate, broadcast });
   }
 
-  static broadcastShow({ images, background, index = 0 }) {
+  static broadcastShow({ images, background, index = 0, text = this.getText() }) {
     if (!game?.socket || !game.user?.isGM) return;
     if (!Array.isArray(images) || !images.length) return;
 
@@ -371,11 +380,12 @@ class ImageViewer extends Application {
       userId: game.user.id,
       images,
       background,
-      index
+      index,
+      text
     });
   }
 
-  static broadcastUpdate({ index, background, images } = {}) {
+  static broadcastUpdate({ index, background, images, text } = {}) {
     if (!game?.socket || !game.user?.isGM) return;
     const payload = {
       type: SOCKET_EVENTS.UPDATE,
@@ -384,6 +394,7 @@ class ImageViewer extends Application {
     if (typeof index === 'number' && Number.isFinite(index)) payload.index = index;
     if (typeof background !== 'undefined') payload.background = background;
     if (Array.isArray(images) && images.length) payload.images = images;
+    if (typeof text === 'string') payload.text = text;
     game.socket.emit(SOCKET_CHANNEL, payload);
   }
 
@@ -400,10 +411,28 @@ class ImageViewer extends Application {
     if (!this._instance) return;
     const payload = {
       index: this._instance.index,
-      background: this._instance.background
+      background: this._instance.background,
+      text: this.getText()
     };
     if (includeImages) payload.images = Array.isArray(this._instance.images) ? Array.from(this._instance.images) : [];
     this.broadcastUpdate(payload);
+  }
+
+  static getText() {
+    return typeof this._text === 'string' ? this._text : '';
+  }
+
+  static setText(text, { broadcast = true } = {}) {
+    this.registerSocket();
+    const value = typeof text === 'string' ? text : '';
+    this._text = value;
+    if (this._instance) {
+      this._instance.text = value;
+      this._instance.render(false);
+    }
+    if (broadcast && game.user?.isGM) {
+      this.broadcastUpdate({ text: value });
+    }
   }
 
   static registerSocket() {
@@ -416,15 +445,15 @@ class ImageViewer extends Application {
 
       switch (type) {
         case SOCKET_EVENTS.SHOW: {
-          const { images, background, index = 0 } = payload;
+          const { images, background, index = 0, text } = payload;
           if (!Array.isArray(images) || !images.length) return;
-          this.show({ images, background, startIndex: index, broadcast: false });
+          this.show({ images, background, startIndex: index, text, broadcast: false });
           break;
         }
         case SOCKET_EVENTS.UPDATE: {
-          const { images, background, index } = payload;
+          const { images, background, index, text } = payload;
           if (Array.isArray(images) && images.length) {
-            this.show({ images, background, startIndex: index ?? 0, broadcast: false });
+            this.show({ images, background, startIndex: index ?? 0, text, broadcast: false });
             break;
           }
           const instance = this._instance;
@@ -432,6 +461,10 @@ class ImageViewer extends Application {
           if (typeof background !== 'undefined') instance.background = background;
           if (typeof index === 'number' && Number.isFinite(index)) {
             instance.index = Math.min(Math.max(index, 0), Math.max(instance.images.length - 1, 0));
+          }
+          if (typeof text === 'string') {
+            this._text = text;
+            instance.text = text;
           }
           instance.render(false);
           break;
@@ -464,6 +497,7 @@ class ImageViewer extends Application {
       background: this.background,
       current,
       thumbnails,
+      text: this.text,
       index: this.index + 1,
       total
     };
@@ -545,6 +579,7 @@ class ImageViewer extends Application {
 
 ImageViewer._instance = null;
 ImageViewer._socketRegistered = false;
+ImageViewer._text = '';
 
 globalThis.SocialEncounters = {
   openBrowser: () => ImageFolderBrowser.show()
