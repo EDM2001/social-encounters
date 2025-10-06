@@ -41,6 +41,7 @@
 .social-encounters.image-browser .browser__field-buttons {
   display: flex;
   gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .social-encounters.image-browser .browser__btn {
@@ -221,20 +222,6 @@
   cursor: pointer;
 }
 
-.social-encounters.image-viewer .viewer__text {
-  position: relative;
-  z-index: 1;
-  max-width: min(80vw, 1100px);
-  margin-top: 1rem;
-  padding: 1rem 1.5rem;
-  background: rgba(0, 0, 0, 0.7);
-  border-radius: 1rem;
-  color: #fff;
-  font-size: 1.1rem;
-  text-align: center;
-  white-space: pre-wrap;
-}
-
 .social-encounters.image-viewer .viewer__controls {
   position: relative;
   z-index: 1;
@@ -333,3 +320,81 @@
   50% { background-position: center center; }
   100% { background-position: center right; }
 }
+.social-encounters.image-browser .browser__scroll {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow-y: auto;
+}
+
+.social-encounters.image-browser .browser__section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.social-encounters.image-browser .browser__section-header h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+
+
+.social-encounters.image-browser .browser__btn--active {
+  background: var(--color-bg-btn-primary, #3b82f6);
+  border-color: var(--color-bg-btn-primary, #3b82f6);
+}
+
+.social-encounters.image-browser .browser__btn--active:hover {
+  background: #2563eb;
+}
+
+.social-encounters.image-browser .background-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.75rem;
+}
+
+.social-encounters.image-browser .background-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.5rem;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition: border-color 150ms ease, transform 150ms ease;
+}
+
+.social-encounters.image-browser .background-card img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.social-encounters.image-browser .background-card.is-selected {
+  border-color: var(--color-border-highlight, #3b82f6);
+  background: rgba(59, 130, 246, 0.15);
+  transform: translateY(-2px);
+}
+
+.social-encounters.image-browser .background-card__name {
+  font-size: 0.85rem;
+  text-align: center;
+  color: var(--color-text-light-primary, #ddd);
+}
+
+
+
+
+
+
+
+
+
+

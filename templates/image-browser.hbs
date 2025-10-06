@@ -1,35 +1,67 @@
 <section class="browser">
-  <section class="browser__section browser__section--info">
-    <label class="browser__label">{{localize "SOCIALENCOUNTERS.FolderLabel"}}</label>
-    <div class="browser__field">
-      <input type="text" value="{{folder}}" placeholder="/" readonly>
-    </div>
-    <p class="browser__hint">{{localize "SOCIALENCOUNTERS.Settings.ImageFolder.Hint"}}</p>
-  </section>
-
-  <section class="browser__section">
-    <label class="browser__label">{{localize "SOCIALENCOUNTERS.TextLabel"}}</label>
-    <div class="browser__field">
-      <input type="text" value="{{text}}" placeholder="{{localize "SOCIALENCOUNTERS.TextPlaceholder"}}" readonly>
-      <div class="browser__field-buttons">
-        <button type="button" class="browser__btn" data-action="show-text">{{localize "SOCIALENCOUNTERS.TextShow"}}</button>
-        <button type="button" class="browser__btn browser__btn--muted" data-action="clear-text" {{#unless text}}disabled{{/unless}}>{{localize "SOCIALENCOUNTERS.TextClear"}}</button>
+  <div class="browser__scroll">
+    <section class="browser__section browser__section--category">
+      <header class="browser__section-header">
+        <h3>{{localize "SOCIALENCOUNTERS.NPCSectionTitle"}}</h3>
+        <div class="browser__field-buttons">
+          <button type="button" class="browser__btn" data-action="select-all" data-target="npc">{{localize "SOCIALENCOUNTERS.SelectAll"}}</button>
+          <button type="button" class="browser__btn browser__btn--muted" data-action="clear-selection" data-target="npc">{{localize "SOCIALENCOUNTERS.ClearSelection"}}</button>
+        </div>
+      </header>
+      <div class="browser__field">
+        <input type="text" value="{{folders.npc}}" placeholder="{{localize "SOCIALENCOUNTERS.FolderPlaceholder"}}" readonly>
+        <div class="browser__field-buttons">
+          <button type="button" class="browser__btn" data-action="choose-folder" data-target="npc">{{localize "SOCIALENCOUNTERS.ChooseFolder"}}</button>
+          {{#if folders.npc}}
+            <button type="button" class="browser__btn browser__btn--muted" data-action="clear-folder" data-target="npc">{{localize "SOCIALENCOUNTERS.ClearFolder"}}</button>
+          {{/if}}
+          <button type="button" class="browser__btn browser__btn--muted" data-action="refresh-folder" data-target="npc">{{localize "SOCIALENCOUNTERS.RefreshFolder"}}</button>
+        </div>
       </div>
-    </div>
-  </section>
+      {{#if hasNpcImages}}
+        <div class="image-list image-list--category">
+          {{#each npcImages as |img|}}
+            <label class="image-card {{#if img.selected}}selected{{/if}}" data-image-path="{{img.path}}">
+              <input type="checkbox" data-action="toggle-image" value="{{img.path}}" {{#if img.selected}}checked{{/if}}>
+              <img class="image-card__preview" src="{{img.path}}" alt="{{img.name}}">
+              <span class="image-card__name">{{img.name}}</span>
+            </label>
+          {{/each}}
+        </div>
+      {{else}}
+        <p class="image-list__empty">{{localize "SOCIALENCOUNTERS.NoNpcImages"}}</p>
+      {{/if}}
+    </section>
 
-  <section class="browser__section">
-    <label class="browser__label">{{localize "SOCIALENCOUNTERS.BackgroundLabel"}}</label>
-    <div class="browser__field">
-      <input type="text" value="{{background}}" placeholder="-" readonly>
-      <div class="browser__field-buttons">
-        <button type="button" class="browser__btn" data-action="choose-background">{{localize "SOCIALENCOUNTERS.ChooseBackground"}}</button>
-        {{#if background}}
-          <button type="button" class="browser__btn browser__btn--muted" data-action="clear-background">{{localize "SOCIALENCOUNTERS.ClearBackground"}}</button>
-        {{/if}}
+    <section class="browser__section browser__section--background">
+      <header class="browser__section-header">
+        <h3>{{localize "SOCIALENCOUNTERS.BackgroundSectionTitle"}}</h3>
+      </header>
+      <div class="browser__field">
+        <input type="text" value="{{background}}" placeholder="-" readonly>
+        <div class="browser__field-buttons">
+          <button type="button" class="browser__btn" data-action="choose-folder" data-target="background">{{localize "SOCIALENCOUNTERS.ChooseFolder"}}</button>
+          {{#if folders.background}}
+            <button type="button" class="browser__btn browser__btn--muted" data-action="clear-folder" data-target="background">{{localize "SOCIALENCOUNTERS.ClearFolder"}}</button>
+          {{/if}}
+          <button type="button" class="browser__btn browser__btn--muted" data-action="refresh-folder" data-target="background">{{localize "SOCIALENCOUNTERS.RefreshFolder"}}</button>
+          <button type="button" class="browser__btn browser__btn--muted" data-action="clear-background" {{#unless background}}disabled{{/unless}}>{{localize "SOCIALENCOUNTERS.ClearBackground"}}</button>
+        </div>
       </div>
-    </div>
-  </section>
+      {{#if hasBackgrounds}}
+        <div class="background-list">
+          {{#each backgroundImages as |bg|}}
+            <button type="button" class="background-card {{#if bg.selected}}is-selected{{/if}}" data-action="select-background" data-path="{{bg.path}}">
+              <img src="{{bg.path}}" alt="{{bg.name}}">
+              <span class="background-card__name">{{bg.name}}</span>
+            </button>
+          {{/each}}
+        </div>
+      {{else}}
+        <p class="image-list__empty">{{localize "SOCIALENCOUNTERS.NoBackgrounds"}}</p>
+      {{/if}}
+    </section>
+  </div>
 
   <section class="browser__toolbar">
     <span class="browser__selection">
@@ -40,20 +72,6 @@
       <button type="button" class="browser__btn" data-action="select-all">{{localize "SOCIALENCOUNTERS.SelectAll"}}</button>
       <button type="button" class="browser__btn browser__btn--muted" data-action="clear-selection">{{localize "SOCIALENCOUNTERS.ClearSelection"}}</button>
     </div>
-  </section>
-
-  <section class="image-list">
-    {{#if hasImages}}
-      {{#each images as |img|}}
-        <label class="image-card {{#if img.selected}}selected{{/if}}" data-image-path="{{img.path}}">
-          <input type="checkbox" data-action="toggle-image" value="{{img.path}}" {{#if img.selected}}checked{{/if}}>
-          <img class="image-card__preview" src="{{img.path}}" alt="{{img.name}}">
-          <span class="image-card__name">{{img.name}}</span>
-        </label>
-      {{/each}}
-    {{else}}
-      <p class="image-list__empty">{{localize "SOCIALENCOUNTERS.NoImages"}}</p>
-    {{/if}}
   </section>
 
   <footer class="browser__footer">

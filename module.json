@@ -1,42 +1,50 @@
 {
-  "id": "social-encounters",
-  "title": "Social Encounters Viewer",
-  "description": "Curate artwork from a folder and present it as a full-screen slideshow inside Foundry VTT.",
-  "version": "0.1.10",
-  "type": "module",
-  "authors": [
-    {
-      "name": "el Lobo Diablo",
-      "url": "",
-      "email": ""
-    }
-  ],
-  "manifestVersion": 3,
-  "compatibility": {
-    "minimum": "13",
-    "verified": "13"
-  },
-  "minimumCoreVersion": "13",
-  "esmodules": [
-    "scripts/main.js"
-  ],
-  "styles": [
-    "styles/module.css"
-  ],
-  "languages": [
-    {
-      "lang": "en",
-      "name": "English",
-      "path": "lang/en.json"
-    }
-  ],
-  "packs": [],
-  "relationships": {},
-  "dependencies": [],
-  "flags": {},
-  "readme": "README.md",
-  "license": "LICENSE",
-  "url": "https://github.com/EDM2001/social-encounters",
-  "manifest": "https://raw.githubusercontent.com/EDM2001/social-encounters/main/module.json",
-  "download": "https://github.com/EDM2001/social-encounters/archive/refs/heads/main.zip"
+    "id":  "social-encounters",
+    "title":  "Social Encounters Viewer",
+    "description":  "Configure NPC portrait and encounter background folders, then present them as a synchronized slideshow inside Foundry VTT.",
+    "version":  "0.1.11",
+    "type":  "module",
+    "authors":  [
+                    {
+                        "name":  "el Lobo Diablo",
+                        "url":  "",
+                        "email":  ""
+                    }
+                ],
+    "manifestVersion":  3,
+    "compatibility":  {
+                          "minimum":  "13",
+                          "verified":  "13"
+                      },
+    "minimumCoreVersion":  "13",
+    "esmodules":  [
+                      "scripts/main.js"
+                  ],
+    "styles":  [
+                   "styles/module.css"
+               ],
+    "languages":  [
+                      {
+                          "lang":  "en",
+                          "name":  "English",
+                          "path":  "lang/en.json"
+                      }
+                  ],
+    "packs":  [
+
+              ],
+    "relationships":  {
+
+                      },
+    "dependencies":  [
+
+                     ],
+    "flags":  {
+
+              },
+    "readme":  "README.md",
+    "license":  "LICENSE",
+    "url":  "https://github.com/EDM2001/social-encounters",
+    "manifest":  "https://raw.githubusercontent.com/EDM2001/social-encounters/main/module.json",
+    "download":  "https://github.com/EDM2001/social-encounters/archive/refs/heads/main.zip"
 }
