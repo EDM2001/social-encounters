@@ -1,4 +1,5 @@
 import { MODULE_ID, SETTING_KEYS } from "./constants.js";
+import { ImageFolderBrowser } from "./image-browser.js";
 import { log } from "./utils.js";
 
 export function registerModuleSettings() {
@@ -11,7 +12,8 @@ export function registerModuleSettings() {
     config: true,
     type: String,
     default: "",
-    filePicker: "folder"
+    filePicker: "folder",
+    onChange: (value) => ImageFolderBrowser.handleSettingChange(SETTING_KEYS.NPC_FOLDER, value)
   });
 
   game.settings.register(MODULE_ID, SETTING_KEYS.BACKGROUND_FOLDER, {
@@ -21,6 +23,7 @@ export function registerModuleSettings() {
     config: true,
     type: String,
     default: "",
-    filePicker: "folder"
+    filePicker: "folder",
+    onChange: (value) => ImageFolderBrowser.handleSettingChange(SETTING_KEYS.BACKGROUND_FOLDER, value)
   });
 }
