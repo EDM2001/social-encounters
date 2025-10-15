@@ -2,7 +2,7 @@
   <button type="button" class="viewer__close" data-action="close" aria-label="{{localize 'SOCIALENCOUNTERS.ViewerClose'}}">&times;</button>
   <div class="viewer__stage">
     {{#if current}}
-      <img class="viewer-image" src="{{current}}" alt="">
+      <img class="viewer__image" src="{{current}}" alt="{{currentLabel}}">
     {{/if}}
   </div>
   <footer class="viewer__controls">

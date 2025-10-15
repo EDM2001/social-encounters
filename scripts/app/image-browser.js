@@ -277,10 +277,10 @@ export class ImageFolderBrowser extends Application {
       const previousSelection = new Set(
         this.npcImages.filter((img) => img.selected).map((img) => img.path)
       );
-      const selectByDefault = previousSelection.size === 0 && entries.length > 0;
+      const hasPreviousSelection = previousSelection.size > 0;
 
       this.npcImages = entries.map((entry) => {
-        const selected = previousSelection.has(entry.path) || selectByDefault;
+        const selected = hasPreviousSelection && previousSelection.has(entry.path);
         if (selected) this.selected.add(entry.path);
         return {
           path: entry.path,
@@ -360,7 +360,14 @@ export class ImageFolderBrowser extends Application {
     if (path === this.background) return;
     this.background = path;
     await this.render(false);
-    if (game.user?.isGM) ImageViewer.syncWithPlayers();
+    if (game.user?.isGM) {
+      const viewer = ImageViewer.active;
+      if (viewer) {
+        viewer.background = typeof path === "string" ? path.trim() || null : null;
+        viewer.render().catch((error) => console.error(`${MODULE_ID} | Failed to refresh viewer background`, error));
+      }
+      ImageViewer.syncWithPlayers();
+    }
   }
 
   #selectedImagePaths() {
@@ -373,7 +380,25 @@ export class ImageFolderBrowser extends Application {
       ui.notifications?.warn(game.i18n.localize("SOCIALENCOUNTERS.NotifyNoImages"));
       return;
     }
-    ImageViewer.show({ images: ordered, background: this.background, startIndex: 0, broadcast: true });
+    try {
+      const viewer = await ImageViewer.show({
+        images: ordered,
+        background: this.background,
+        startIndex: 0,
+        broadcast: true
+      });
+      if (viewer) {
+        setTimeout(() => {
+          if (!this.rendered) return;
+          void this.close({ animate: false }).catch((error) =>
+            console.error(`${MODULE_ID} | Failed to close browser`, error)
+          );
+        }, 0);
+      }
+    } catch (error) {
+      console.error(`${MODULE_ID} | Failed to launch viewer`, error);
+      ui.notifications?.error(game.i18n.localize("SOCIALENCOUNTERS.ViewerLaunchError"));
+    }
   }
 
   activateListeners(html) {
@@ -415,7 +440,14 @@ export class ImageFolderBrowser extends Application {
     html.find('[data-action="clear-background"]').on('click', async () => {
       this.background = null;
       await this.render(false);
-      if (game.user?.isGM) ImageViewer.syncWithPlayers();
+      if (game.user?.isGM) {
+        const viewer = ImageViewer.active;
+        if (viewer) {
+          viewer.background = null;
+          viewer.render().catch((error) => console.error(`${MODULE_ID} | Failed to clear viewer background`, error));
+        }
+        ImageViewer.syncWithPlayers();
+      }
     });
 
     html.find('[data-action="launch-viewer"]').on('click', () => {

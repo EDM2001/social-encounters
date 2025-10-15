@@ -21,6 +21,7 @@
   "SOCIALENCOUNTERS.ViewerPrevious": "Previous",
   "SOCIALENCOUNTERS.ViewerNext": "Next",
   "SOCIALENCOUNTERS.ViewerThumbnailLabel": "Show image {index}",
+  "SOCIALENCOUNTERS.ViewerLaunchError": "Failed to open the viewer. Check the console for details.",
   "SOCIALENCOUNTERS.ImageFolderErrorNPC": "Could not load the NPC image folder.",
   "SOCIALENCOUNTERS.BackgroundFolderError": "Could not load the configured background folder.",
   "SOCIALENCOUNTERS.Settings.NPCFolder.Name": "NPC Image Folder",
